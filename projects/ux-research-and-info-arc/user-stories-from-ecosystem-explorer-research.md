@@ -189,5 +189,5 @@ reflects a different angle on how people actually
 find and use OpenTelemetry information; some of the
 patterns these stories illustrate are explored more
 fully in the
-[Interview Synthesis](https://github.com/open-telemetry/opentelemetry-ecosystem-explorer/blob/main/projects/ux-research-and-info-arc/user-interview-synthesis.md),
+[Interview Synthesis](https://shorturl.at/2GH2l),
 which covers the research findings from all seven user interviews.
