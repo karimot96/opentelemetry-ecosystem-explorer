@@ -6,6 +6,7 @@ phase: 1
 status: in-progress
 last_updated: "2026-09-07"
 ---
+
 # User Stories from the Ecosystem Explorer Research
 
 These stories are drawn from seven one-on-one user interviews
@@ -13,7 +14,9 @@ conducted for the Ecosystem Explorer project — a platform
 designed to help developers discover and understand
 OpenTelemetry components. Participants are identified by
 role only.
+
 ## The developer who traded a wasted PR for a lesson about checking versions first
+
 A senior backend developer, deeply experienced with
 OpenTelemetry since 2023, described a moment that stuck
 with him: a teammate opened an old GitHub issue asking
@@ -32,7 +35,9 @@ streamlines it to where I meant to go." When AI came up, he
 described using it the way he used to use Google, asking a
 direct question and getting a synthesized answer with examples
 rather than a pile of links to sort through himself.
-## The SRE who found tools through community 
+
+## The SRE who found tools through community
+
 A senior SRE running an enterprise migration off several
 commercial observability vendors described relying on a
 vendor open-source Slack, a few Discord servers, and Reddit
@@ -56,7 +61,9 @@ latest AI models rarely steer him wrong anymore on
 OpenTelemetry tasks, especially when he gives them
 his own working code as context, a sharp contrast to
 how most other participants described AI.
+
 ## The Observability Architect navigating inconsistent OTel docs
+
 An observability architect at a large financial services
 company described a specific, repeatable pattern: when
 he asks different tools about environment variables for
@@ -85,8 +92,10 @@ different observability platforms would "align to
 the same semantic convention" instead of each reshaping
 OpenTelemetry data into its own schema, so switching
 backends wouldn't mean losing the benefit of a shared
-standard. 
+standard.
+
 ## The engineer who trusts blog posts more than official docs
+
 An SRE about a year into the role, described leaning on AI
 for step-by-step troubleshooting more than reading
 documentation directly, but was quick to add that AI
@@ -100,7 +109,9 @@ process before trusting anything in production is hands-on:
 he deploys locally, runs test traffic against it, confirms
 it behaves as expected, and only then promotes it toward
 production.
+
 ## The architect who wants OTel's search to work like a real search engine
+
 A software architect at a large enterprise data platform
 company described a specific frustration with the
 OpenTelemetry site's search: it doesn't function like
@@ -114,7 +125,9 @@ had to choose a Collector deployment pattern, pod,
 sidecar, DaemonSet, or StatefulSet, with no clear
 guidance on which fits which situation, calling it
 "not a cakewalk" to work out on his own.
+
 ## The SRE whose actions didn't match his own review of the docs
+
 An SRE on an observability team at a large retail company rated
 the documentation and contrib repository as "quite good enough"
 when asked directly. But the way he actually works tells
@@ -148,7 +161,9 @@ He described a similar disorientation with GenAI specifically:
 "the genai got its own repo for Java things... sometimes I get
 confused with many repos," navigating semantic conventions
 that live in different places depending on the ecosystem.
+
 ## The SRE who saw Ecosystem Explorer answer in seconds
+
 A site reliability engineer supporting over 100 engineering
 teams spent real time trying to close an observability gap:
 services built on Apache Camel weren't producing connected
@@ -183,7 +198,9 @@ captured the core need behind the whole project:
 "it would be great if I could tell my local AI
 agent to use this page as a source, because it
 seems like it has all the information I want."
+
 ## Why these stories matter together
+
 No single story here is the whole picture. Each one
 reflects a different angle on how people actually
 find and use OpenTelemetry information; some of the
