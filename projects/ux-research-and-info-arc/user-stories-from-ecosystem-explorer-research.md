@@ -1,3 +1,11 @@
+---
+title: "User Stories from the Ecosystem Explorer Research"
+issue: 309
+type: brief
+phase: 1
+status: in-progress
+last_updated: "2026-09-07"
+---
 # User Stories from the Ecosystem Explorer Research
 
 These stories are drawn from seven one-on-one user interviews
@@ -180,16 +188,6 @@ No single story here is the whole picture. Each one
 reflects a different angle on how people actually
 find and use OpenTelemetry information; some of the
 patterns these stories illustrate are explored more
-fully in the [Interview Synthesis](https://github.com/open-telemetry/opentelemetry-ecosystem-explorer/blob/main/projects/ux-research-and-info-arc/user-interview-synthesis.md), which covers the
-research findings from all seven user interviews.
-
-
-
-
-
-
-
-
-
-
-
+fully in the
+[Interview Synthesis](https://github.com/open-telemetry/opentelemetry-ecosystem-explorer/blob/main/projects/ux-research-and-info-arc/user-interview-synthesis.md),
+which covers the research findings from all seven user interviews.
