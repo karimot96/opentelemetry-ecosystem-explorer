@@ -1,5 +1,9 @@
 {
   "landingV1": {
+    "seo": {
+      "title": "OpenTelemetry Java Agent — Ecosystem Explorer",
+      "description": "Explore OpenTelemetry Java agent auto-instrumentation: supported libraries, emitted telemetry, and configuration options."
+    },
     "hero": {
       "eyebrow": "Auto-instrumentation · JVM",
       "lead": "Zero-code auto-instrumentation for Java applications. Hundreds of supported libraries and frameworks; configurable via system properties or env vars.",
@@ -55,6 +59,26 @@
     "releases": {
       "title": "Releases",
       "description": "Compare Java Agent versions to see changes in telemetry and configuration."
+    }
+  },
+  "explore": {
+    "infoBar": {
+      "instrumentationCount_one": "Available instrumentation",
+      "instrumentationCount_other": "Available instrumentations",
+      "latestRelease": "Latest release version",
+      "error": "Failed to load summary stats: {{message}}"
+    },
+    "resources": {
+      "heading": "Resources & Documentation",
+      "items": {
+        "gettingStarted": "Java Agent Getting Started",
+        "configReference": "Java Agent Configuration Reference",
+        "githubRepo": "GitHub Repository"
+      }
+    },
+    "announcements": {
+      "heading": "News & Announcements",
+      "readMore": "Read more"
     }
   },
   "list": {
@@ -169,7 +193,9 @@
     "metricName": "Metric Name",
     "metricDescription": "Description",
     "emittedBy": "Emitted By",
-    "release": "Release {{version}}"
+    "release": "Release {{version}}",
+    "noFilteredResults": "No modules match the selected filters.",
+    "noFilteredResultsDesc": "Try selecting a different status, or clear the filter to see all changes."
   },
   "configList": {
     "title": "Configuration Options Explorer",
@@ -210,7 +236,14 @@
     "spans": "Spans",
     "metrics": "Metrics",
     "javaAgent": "Java Agent",
-    "standalone": "Standalone"
+    "standalone": "Standalone",
+    "status": {
+      "label": "Status",
+      "all": "All Statuses",
+      "added": "Added",
+      "changed": "Changed",
+      "removed": "Removed"
+    }
   },
   "badges": {
     "agent": {
@@ -410,6 +443,11 @@
       "customized_other": "· {{count}} customized",
       "loading": "Loading instrumentations…",
       "error": "Failed to load instrumentations.",
+      "addAll": {
+        "button": "Add all instrumentation configs",
+        "confirm_one": "Add {{count}} instrumentation config option with its default? Values you've already customized will be kept.",
+        "confirm_other": "Add {{count}} instrumentation config options with their defaults? Values you've already customized will be kept."
+      },
       "readout": {
         "search": "Search \"{{search}}\" · {{shown}} of {{total}}",
         "customized": "Customized · {{count}} of {{total}}",

@@ -23,8 +23,9 @@ from watcher_common.version_detector import VersionDetector
 from .component_scanner import ComponentScanner
 from .deprecation_detector import DeprecationDetector
 from .inventory_manager import InventoryManager
+from .readme_scanner import discover_component_readmes
 from .schema_copier import SCHEMA_RELATIVE_PATH, UNKNOWN_HASH, CollectorSchemaCopier
-from .type_defs import DistributionName
+from .type_defs import COMPONENT_TYPES, DistributionName
 
 logger = logging.getLogger(__name__)
 
@@ -174,14 +175,21 @@ class CollectorSync:
         distributions) and records that hash in every component YAML for
         drift detection and parser routing.
 
+        Also discovers and stores each component's README.md, if present,
+        content-addressed under ``component_readmes/``. README publishing
+        is best-effort: a failure here is logged and does not fail the sync.
+        This always runs after the inventory write below, never before -
+        see the comment at that call site for why the order matters.
+
         Schema is always read from the core repo: ``mdatagen`` lives only in
         ``opentelemetry-collector``, and the schema is identical across
         distributions, so contrib carries the same ``schema_hash`` as core.
 
         Registry layout after this call:
             ecosystem-registry/collector/
-                {distribution}/v{version}/*.yaml   (component data, each with schema_hash)
-                meta/schemas/{hash}.yaml           (one file per distinct schema)
+                {distribution}/v{version}/*.yaml               (component data, each with schema_hash)
+                {distribution}/v{version}/component_readmes/    (one file per distinct README content)
+                meta/schemas/{hash}.yaml                        (one file per distinct schema)
 
         Args:
             distribution: Distribution name
@@ -198,6 +206,26 @@ class CollectorSync:
             repository=repository,
             schema_hash=schema_hash,
         )
+
+        # Readme discovery/save runs after the critical inventory write, not
+        # before: save_versioned_inventory() is what version_exists() treats
+        # as the "this version is tracked" signal, since it just checks
+        # whether the version directory exists. If readme saving (which also
+        # mkdirs that directory as a side effect of writing into it) ran
+        # first and the process crashed before save_versioned_inventory
+        # completed, version_exists() would incorrectly report the version
+        # as already tracked despite zero real component data ever being
+        # written - causing process_latest_release() to skip it forever.
+        repo_path = self.repos[distribution]
+        try:
+            readmes = discover_component_readmes(repo_path, components)
+            written = self.inventory_manager.save_component_readmes(distribution, version, readmes.items())
+            if written:
+                logger.info("  Saved %d component README(s)", written)
+        except OSError as e:
+            # README publishing is best-effort and must never fail the sync -
+            # the component inventory itself is the critical data.
+            logger.warning("  Failed to save component READMEs for %s %s: %s", distribution, version, e)
 
         logger.info("  Saved %s %s (schema_hash=%s)", distribution, version, schema_hash)
 
@@ -516,13 +544,21 @@ class CollectorSync:
             "versions_processed": processed,
         }
 
-    def backfill(self, versions_by_dist: dict[DistributionName, list[Version] | None] | None = None) -> dict[str, Any]:
+    def backfill(
+        self,
+        versions_by_dist: dict[DistributionName, list[Version] | None] | None = None,
+        prune_unlisted: bool = False,
+    ) -> dict[str, Any]:
         """
         Backfill versions across all distributions.
 
         Args:
             versions_by_dist: Dictionary mapping distribution to list of versions to backfill,
                             or None to auto-detect all existing versions for all distributions
+            prune_unlisted: When True, delete existing release versions not in the provided
+                            list for each distribution before backfilling. Requires an explicit
+                            version list per distribution (distributions mapped to None are left
+                            untouched). SNAPSHOT versions are always kept.
 
         Returns:
             Summary of backfill operation
@@ -537,7 +573,16 @@ class CollectorSync:
         logger.info("=" * 60)
 
         for distribution in versions_by_dist.keys():
-            result = self.backfill_versions(distribution, versions_by_dist[distribution])
+            keep = versions_by_dist[distribution]
+            if prune_unlisted and keep is not None:
+                # Reset this distribution's deprecation index so it is recomputed cleanly over
+                # only the surviving versions. Otherwise entries referencing now-deleted versions
+                # would linger in deprecations.yaml (backfill_versions appends, never clears).
+                self.deprecations[distribution] = {component_type: [] for component_type in COMPONENT_TYPES}
+                removed = self.inventory_manager.prune_release_versions_not_in(distribution, keep)
+                if removed:
+                    logger.info("Pruned %d unlisted release version(s) from %s", removed, distribution)
+            result = self.backfill_versions(distribution, keep)
             summary["backfilled"].append(result)
 
         logger.info("")

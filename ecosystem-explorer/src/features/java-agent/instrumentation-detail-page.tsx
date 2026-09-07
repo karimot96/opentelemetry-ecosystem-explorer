@@ -42,10 +42,13 @@ import {
   getSemanticConventionInfo,
   getFeatureInfo,
 } from "./utils/format";
+import { isSafeUrl } from "./utils/url";
 import { TelemetrySection } from "./components/telemetry-section";
 import { TelemetryComparisonSection } from "./components/telemetry-comparison/telemetry-comparison-section";
 import { VersionSelector } from "./components/version-selector";
 import { PageContainer } from "@/components/layout/page-container";
+import { Seo } from "@/components/seo/seo";
+import { deriveInstrumentationMeta } from "@/lib/seo/derive";
 import { Tooltip } from "@/components/ui/tooltip";
 import { InstrumentationConfigurationTab } from "./components/instrumentation-configuration-tab";
 import { StandaloneLibraryTab } from "./components/standalone-library-tab";
@@ -59,19 +62,6 @@ function buildSourceUrl(sourcePath: string): string {
     const baseUrl =
       "https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/";
     return new URL(sourcePath, baseUrl).toString();
-  }
-}
-
-/**
- * Returns true only when the URL uses http: or https: protocol.
- * Prevents link-based XSS from non-http(s) schemes such as javascript: or data:.
- */
-function isSafeUrl(url: string): boolean {
-  try {
-    const parsed = new URL(url);
-    return parsed.protocol === "https:" || parsed.protocol === "http:";
-  } catch {
-    return false;
   }
 }
 
@@ -221,8 +211,11 @@ export function InstrumentationDetailPage() {
   const showRawName =
     instrumentation.display_name && instrumentation.display_name !== instrumentation.name;
 
+  const seo = deriveInstrumentationMeta(instrumentation);
+
   return (
     <PageContainer>
+      <Seo title={seo.title} description={seo.description} />
       <BackButton />
 
       <div className="mt-3 space-y-6">
