@@ -7,7 +7,7 @@ status: in-progress
 last_updated: "2026-09-07"
 ---
 
-# User Stories from the Ecosystem Explorer Research
+# User Narratives from the Ecosystem Explorer Research
 
 These stories are drawn from seven one-on-one user interviews conducted for the Ecosystem Explorer
 project — a platform designed to help developers discover and understand OpenTelemetry components.
@@ -103,7 +103,7 @@ team afterward. He described a similar disorientation with GenAI specifically: "
 own repo for Java things... sometimes I get confused with many repos," navigating semantic
 conventions that live in different places depending on the ecosystem.
 
-## The SRE who saw Ecosystem Explorer answer in seconds
+## The SRE who watched Ecosystem Explorer answer in seconds what took him a longer time to figure out without it
 
 A site reliability engineer supporting over 100 engineering teams spent real time trying to close an
 observability gap: services built on Apache Camel weren't producing connected traces or any metrics,
@@ -129,5 +129,5 @@ page as a source, because it seems like it has all the information I want."
 
 No single story here is the whole picture. Each one reflects a different angle on how people
 actually find and use OpenTelemetry information; some of the patterns these stories illustrate are
-explored more fully in the [Interview Synthesis](https://shorturl.at/2GH2l), which covers the
+explored more fully in the [Interview Synthesis](https://github.com/open-telemetry/opentelemetry-ecosystem-explorer/blob/main/projects/ux-research-and-info-arc/user-interview-synthesis.md), which covers the
 research findings from all seven user interviews.
