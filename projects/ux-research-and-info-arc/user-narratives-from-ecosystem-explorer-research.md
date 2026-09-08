@@ -129,5 +129,6 @@ page as a source, because it seems like it has all the information I want."
 
 No single story here is the whole picture. Each one reflects a different angle on how people
 actually find and use OpenTelemetry information; some of the patterns these stories illustrate are
-explored more fully in the [Interview Synthesis](https://github.com/open-telemetry/opentelemetry-ecosystem-explorer/blob/main/projects/ux-research-and-info-arc/user-interview-synthesis.md), which covers the
-research findings from all seven user interviews.
+explored more fully in the
+[Interview Synthesis](https://github.com/open-telemetry/opentelemetry-ecosystem-explorer/blob/main/projects/ux-research-and-info-arc/user-interview-synthesis.md),
+which covers the research findings from all seven user interviews.
