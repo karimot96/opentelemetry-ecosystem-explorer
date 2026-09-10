@@ -151,22 +151,13 @@ break the consistency users rely on to evaluate any component the same way.
 
 ## GenAI-specific principles
 
-GenAI libraries (e.g. LangChain, OpenAI Assistants, Pydantic AI)
-don't get their own ecosystem branch. A GenAI library's actual content
-(Overview, Expected Telemetry, Conformance, Configuration,
-Version History) lives under its native ecosystem, wherever
-that library actually belongs. The GenAI
-entry point should function as a discovery and comparison layer
-rather than duplicating content that already exists under an ecosystem branch.
-
-Conformance Comparison under GenAI is grouped by
-convention, not by library. Add a new convention grouping when there
-is a meaningful need to compare
-multiple conventions, rather than pre-building structures
-for hypothetical future conventions.
-
-**Why:** One participant described genuine confusion navigating GenAI
-semantic conventions spread across
-multiple repositories with no unifying view. Another wanted
-different platforms to consistently
+GenAI libraries (e.g. LangChain, OpenAI Assistants, Pydantic AI) don't get their own ecosystem
+branch. A GenAI library's actual content (Overview, Expected Telemetry, Conformance, Configuration,
+Version History) lives under its native ecosystem, wherever that library actually belongs. The GenAI
+entry point should function as a discovery and comparison layer rather than duplicating content that
+already exists under an ecosystem branch. Conformance Comparison under GenAI is grouped by
+convention, not by library. Add a new convention grouping when there is a meaningful need to compare
+multiple conventions, rather than pre-building structures for hypothetical future conventions. Why:
+One participant described genuine confusion navigating GenAI semantic conventions spread across
+multiple repositories with no unifying view. Another wanted different platforms to consistently
 align on the same conventions rather than reshaping them per vendor.

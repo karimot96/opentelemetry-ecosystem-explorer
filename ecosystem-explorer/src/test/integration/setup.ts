@@ -30,11 +30,13 @@ import homeEn from "../../../public/locales/en/home.json";
 import collectorEn from "../../../public/locales/en/collector.json";
 import javaAgentEn from "../../../public/locales/en/java-agent.json";
 import aboutEn from "../../../public/locales/en/about.json";
+import listEn from "../../../public/locales/en/list.json";
+import detailEn from "../../../public/locales/en/detail.json";
 
 i18n.use(initReactI18next).init({
   lng: "en",
   fallbackLng: "en",
-  ns: ["common", "layout", "home", "collector", "java-agent", "about"],
+  ns: ["common", "layout", "home", "collector", "java-agent", "about", "list", "detail"],
   defaultNS: "common",
   resources: {
     en: {
@@ -44,6 +46,8 @@ i18n.use(initReactI18next).init({
       collector: collectorEn,
       "java-agent": javaAgentEn,
       about: aboutEn,
+      list: listEn,
+      detail: detailEn,
     },
   },
 });

@@ -33,6 +33,12 @@
  * - home.css         — v1 home page wrapper + shared `td-box`/`td-two-col` chrome
  * - pipeline-anatomy.css — v1 ecosystem-landing pipeline strip (`.td-pipeline-anatomy*`, `.td-pipeline-stage*`)
  * - quick-entry-row.css — v1 ecosystem-landing quick-entry row (`.td-quick-entry*`)
+ * - facets.css       — v1 list-page facet primitives (`.td-facet*`, minus `.td-facet-panel*`)
+ * - facet-panel.css  — v1 list-page facet panel chrome (`.td-facet-panel*`)
+ * - list-controls.css — v1 list-page controls (`.td-chip*`, `.td-density*`, `.td-sort*`, `.td-pagination*`, `.td-empty*`, `.td-facet-toggle*`)
+ * - list-views.css   — v1 list page result views (`.td-row*`, `.td-card*`, `.td-table*`)
+ * - list-page.css    — v1 list page shell (`.td-list-page*`, `.td-list-loading`)
+ * - detail.css       — v1 detail page + diff route (`.td-detail*`, `.td-detail-header*`, `.td-sibling-nav*`, `.td-on-page*`, `.td-placement*`, `.td-tabs*`, `.td-example*`, `.td-timeline*`, `.td-diff-selector*`, `.td-compat*`, `.td-diff*`, `.td-diff-section*`, `.td-diff-bucket*`)
  * - cncf-callout.css — sitewide CNCF band above the footer
  * - footer.css       — v1 footer (`.td-footer`) — mirrors opentelemetry.io
  *
@@ -58,5 +64,11 @@
 @import "./home.css";
 @import "./pipeline-anatomy.css";
 @import "./quick-entry-row.css";
+@import "./facets.css";
+@import "./facet-panel.css";
+@import "./list-controls.css";
+@import "./list-views.css";
+@import "./list-page.css";
+@import "./detail.css";
 @import "./cncf-callout.css";
 @import "./footer.css";

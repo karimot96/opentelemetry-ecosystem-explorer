@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 import { render, screen, within } from "@testing-library/react";
+import i18n from "i18next";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CollectorExploreLanding } from "./collector-explore-landing";
-import { useCollectorIndex, useCollectorVersions } from "@/hooks/use-collector-data";
+import {
+  useCollectorDeprecations,
+  useCollectorIndex,
+  useCollectorVersions,
+} from "@/hooks/use-collector-data";
 import type { CollectorIndex } from "@/types/collector";
 
 vi.mock("@/hooks/use-collector-data", () => ({
   useCollectorIndex: vi.fn(),
+  useCollectorDeprecations: vi.fn(),
   useCollectorVersions: vi.fn(),
 }));
 
@@ -82,6 +88,10 @@ const collectorIndex = {
 } satisfies CollectorIndex;
 
 describe("CollectorExploreLanding", () => {
+  afterEach(async () => {
+    await i18n.changeLanguage("en");
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useCollectorIndex).mockReturnValue({
@@ -94,6 +104,24 @@ describe("CollectorExploreLanding", () => {
         versions: [
           { version: "0.150.0", is_latest: true },
           { version: "0.149.0", is_latest: false },
+        ],
+      },
+      loading: false,
+      error: null,
+    });
+    vi.mocked(useCollectorDeprecations).mockReturnValue({
+      data: {
+        ecosystem: "collector",
+        components: [
+          {
+            id: "contrib-jmxreceiver",
+            name: "jmxreceiver",
+            distribution: "contrib",
+            type: "receiver",
+            component_hash: "abc123def456",
+            last_version: "0.156.0",
+            deprecated_in_version: "0.157.0",
+          },
         ],
       },
       loading: false,
@@ -114,6 +142,10 @@ describe("CollectorExploreLanding", () => {
     expect(screen.getByRole("link", { name: /Receiver/i })).toHaveAttribute(
       "href",
       "/collector/components?type=receiver"
+    );
+    expect(screen.getByRole("link", { name: /Deprecated/i })).toHaveAttribute(
+      "href",
+      "/collector/components?version=deprecated"
     );
     expect(screen.getByRole("link", { name: /View Core Components/i })).toHaveAttribute(
       "href",
@@ -165,5 +197,61 @@ describe("CollectorExploreLanding", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent("Error loading Collector data");
     expect(screen.getByText("Collector index request failed with 404.")).toBeInTheDocument();
+  });
+
+  it("renders the landing page while deprecated data is loading", () => {
+    vi.mocked(useCollectorDeprecations).mockReturnValue({
+      data: null,
+      loading: true,
+      error: null,
+    });
+
+    render(
+      <MemoryRouter>
+        <CollectorExploreLanding />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("heading", { name: "Component Types" })).toBeInTheDocument();
+    expect(screen.queryByText("Loading Collector ecosystem data...")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Deprecated/i })).toBeInTheDocument();
+  });
+
+  it("renders the landing page when deprecated data fails", () => {
+    vi.mocked(useCollectorDeprecations).mockReturnValue({
+      data: null,
+      loading: false,
+      error: new Error("Deprecated index request failed with 404."),
+    });
+
+    render(
+      <MemoryRouter>
+        <CollectorExploreLanding />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("heading", { name: "Component Types" })).toBeInTheDocument();
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Deprecated/i })).toBeInTheDocument();
+  });
+
+  it("renders translated content when the language is switched to Spanish", async () => {
+    const collectorEs = await import("../../../../public/locales/es/collector.json");
+    i18n.addResourceBundle("es", "collector", collectorEs.default, true, true);
+    await i18n.changeLanguage("es");
+
+    render(
+      <MemoryRouter>
+        <CollectorExploreLanding />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole("heading", { name: "Tipos de componentes" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Receptor/i })).toHaveAttribute(
+      "href",
+      "/collector/components?type=receiver"
+    );
+    expect(screen.getByRole("link", { name: /Ver componentes Core/i })).toBeInTheDocument();
+    expect(screen.queryByText("Component Types")).not.toBeInTheDocument();
   });
 });

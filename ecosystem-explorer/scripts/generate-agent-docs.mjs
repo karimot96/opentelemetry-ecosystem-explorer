@@ -17,6 +17,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
+import { STATIC_ROUTE_META } from "../src/lib/seo/derive.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,7 +49,7 @@ async function buildCollectorIndex(components, publicPath) {
     componentHashes = manifest.components || {};
   }
 
-  let md = `> For the complete documentation index, see [llms.txt](/llms.txt)\n\n# Collector Components\n\n<!-- llms-txt-link: /llms.txt -->\n\nThis is an index of all OpenTelemetry Collector components.\nFor full configuration details, please refer to the raw JSON data.\n\n**JSON Schema**: [collector-component.schema.json](/schemas/collector-component.schema.json)\n\n## Components\n\n| Display Name | ID | Stability | JSON Data URL |\n| --- | --- | --- | --- |\n`;
+  let md = `> For the complete documentation index, see [llms.txt](/llms.txt)\n\n# Collector Components\n\n<!-- llms-txt-link: /llms.txt -->\n\nThis is an index of all OpenTelemetry Collector components.\nFor full configuration details, please refer to the raw JSON data.\n\n**JSON Schema**: [collector-component.schema.json](/schemas/collector-component.schema.json)\n\nThe JSON Data URLs below are content-addressed and change whenever a component changes. Every component also answers at the stable alias \`/data/collector/components/{id}/latest.json\`, which always serves the current release.\n\n## Components\n\n| Display Name | ID | Stability | JSON Data URL |\n| --- | --- | --- | --- |\n`;
 
   for (const comp of components) {
     const displayName = comp.display_name || comp.name || "Unknown";
@@ -85,7 +86,7 @@ function buildCollectorVersions(versions) {
  */
 async function buildJavaAgentIndex(versions, publicPath) {
   const latestVersion = versions.find((v) => v.is_latest)?.version;
-  let md = `> For the complete documentation index, see [llms.txt](/llms.txt)\n\n# Java Agent Instrumentations\n\n<!-- llms-txt-link: /llms.txt -->\n\nThis is an index of all OpenTelemetry Java Agent instrumentations.\nFor full configuration details, please refer to the raw JSON data.\n\n**JSON Schema**: [javaagent-instrumentation.schema.json](/schemas/javaagent-instrumentation.schema.json)\n\n## Components\n\n| Display Name | ID | JSON Data URL |\n| --- | --- | --- |\n`;
+  let md = `> For the complete documentation index, see [llms.txt](/llms.txt)\n\n# Java Agent Instrumentations\n\n<!-- llms-txt-link: /llms.txt -->\n\nThis is an index of all OpenTelemetry Java Agent instrumentations.\nFor full configuration details, please refer to the raw JSON data.\n\n**JSON Schema**: [javaagent-instrumentation.schema.json](/schemas/javaagent-instrumentation.schema.json)\n\nThe JSON Data URLs below are content-addressed and change whenever an instrumentation changes. Every instrumentation also answers at the stable alias \`/data/javaagent/instrumentations/{id}/latest.json\`, which always serves the current release.\n\n## Components\n\n| Display Name | ID | JSON Data URL |\n| --- | --- | --- |\n`;
 
   if (latestVersion) {
     const manifestRaw = await fs.readFile(
@@ -131,8 +132,19 @@ function buildJavaAgentVersions(versions) {
 
 /**
  * Builds the root llms.txt markdown.
+ *
+ * `collectorPages` / `javaPages` are `{ label, pageUrl }` lists for every
+ * latest-version detail page. They are listed here (matching the sitemap URLs)
+ * so the file provides full coverage of the site's documented pages; each page
+ * URL also serves Markdown when its `.md` suffix is appended. (The edge function
+ * only negotiates `Accept: text/markdown` for the section index pages, not for
+ * individual component/instrumentation or top-level pages, so those are
+ * documented with the `.md` suffix only.)
  */
-function buildLlmsTxt() {
+function buildLlmsTxt(staticPages, collectorPages, javaPages) {
+  const pageList = (pages) =>
+    pages.map(({ label, pageUrl }) => `- [${label}](${pageUrl})`).join("\n");
+
   return `# OpenTelemetry Ecosystem Explorer
 
 <!-- llms-full-txt-link: /llms-full.txt -->
@@ -148,6 +160,12 @@ For agent consumption, we provide index files that point to our structured JSON 
 
 **For a single-file version of all documentation, see [llms-full.txt](/llms-full.txt).**
 
+## Pages
+
+Top-level pages (append \`.md\` to the URL for Markdown):
+
+${pageList(staticPages)}
+
 ## Data Schemas
 
 To help agents parse our JSON data, we provide the following JSON Schemas:
@@ -158,6 +176,11 @@ To help agents parse our JSON data, we provide the following JSON Schemas:
 ## Navigation Patterns
 
 Agents can fetch specific component data using the following URL patterns:
+
+- **Collector Components**: \`/data/collector/components/{id}/latest.json\`
+- **Java Agent Instrumentations**: \`/data/javaagent/instrumentations/{id}/latest.json\`
+
+\`latest.json\` always serves the current release, so \`{id}\` is the only thing you need to know. To pin a specific build instead, use the content-addressed sibling, which never changes once published:
 
 - **Collector Components**: \`/data/collector/components/{id}/{id}-{hash}.json\`
 - **Java Agent Instrumentations**: \`/data/javaagent/instrumentations/{id}/{id}-{hash}.json\`
@@ -171,7 +194,536 @@ Refer to \`/data/collector/versions-index.json\` or \`/data/javaagent/versions-i
 ## Version Comparison Guide
 
 To find what changed in a component between versions, compare its hash in the two version index JSONs; different hashes mean the component changed.
+
+## Collector Components
+
+Every component below has a Markdown page (append \`.md\` to the URL):
+
+${pageList(collectorPages)}
+
+## Java Agent Instrumentations
+
+Every instrumentation below has a Markdown page (append \`.md\` to the URL):
+
+${pageList(javaPages)}
 `;
+}
+
+const escapeCell = (value) =>
+  String(value ?? "")
+    // Escape backslashes first so a literal "\" becomes "\\" before we introduce
+    // our own backslash escapes for pipes (otherwise the escaping is ambiguous).
+    .replace(/\\/g, "\\\\")
+    .replace(/\|/g, "\\|")
+    .replace(/\s+/g, " ")
+    .trim();
+
+/**
+ * Renders a Java telemetry attribute list as `` `name` (TYPE) `` cells. Java
+ * attributes carry their type inline, unlike the Collector's key references.
+ */
+const formatJavaAttributes = (attributes) =>
+  (attributes ?? [])
+    .map((attr) =>
+      attr?.type
+        ? `\`${escapeCell(attr.name)}\` (${escapeCell(attr.type)})`
+        : `\`${escapeCell(attr?.name)}\``
+    )
+    .join(", ");
+
+/**
+ * Derives a Collector metric's type and value type from whichever of the
+ * `sum` / `gauge` / `histogram` descriptor blocks is present.
+ */
+function collectorMetricType(metric) {
+  if (metric?.sum) {
+    return {
+      type: metric.sum.monotonic ? "sum (monotonic)" : "sum",
+      valueType: metric.sum.value_type,
+    };
+  }
+  if (metric?.gauge) return { type: "gauge", valueType: metric.gauge.value_type };
+  if (metric?.histogram) return { type: "histogram", valueType: metric.histogram.value_type };
+  return { type: "unknown", valueType: "" };
+}
+
+/**
+ * Renders a Collector metric map as a GFM table, or `[]` when the map is empty.
+ *
+ * Collector metric data arrives in two disjoint shapes: `component.metrics`
+ * (what the component scrapes or emits) and `component.telemetry.metrics` (the
+ * component's own internal metrics). Both use this per-metric shape.
+ *
+ * `metric.attributes` holds string keys into the component-level `attributes`
+ * map rather than inline definitions, so types are resolved from `attributeDefs`.
+ */
+function collectorMetricsTable(heading, metrics, attributeDefs) {
+  if (!metrics || typeof metrics !== "object" || !Object.keys(metrics).length) return [];
+  const lines = [
+    `## ${heading}`,
+    "",
+    "| Metric | Type | Value type | Unit | Stability | Enabled | Attributes | Description |",
+    "| --- | --- | --- | --- | --- | --- | --- | --- |",
+  ];
+  for (const [metricName, metric] of Object.entries(metrics)) {
+    const { type, valueType } = collectorMetricType(metric);
+    const attrs = (metric?.attributes ?? [])
+      .map((key) => {
+        const def = attributeDefs?.[key];
+        return def?.type
+          ? `\`${escapeCell(key)}\` (${escapeCell(def.type)})`
+          : `\`${escapeCell(key)}\``;
+      })
+      .join(", ");
+    // extended_documentation is multi-line prose on some metrics; escapeCell
+    // flattens whitespace so it cannot break out of the table row.
+    const description = [metric?.description, metric?.extended_documentation]
+      .filter(Boolean)
+      .join(" ");
+    lines.push(
+      `| \`${escapeCell(metricName)}\` | ${escapeCell(type)} | ${escapeCell(
+        valueType
+      )} | ${escapeCell(metric?.unit)} | ${escapeCell(metric?.stability)} | ${
+        metric?.enabled ? "yes" : "no"
+      } | ${attrs} | ${escapeCell(description)} |`
+    );
+  }
+  lines.push("");
+  return lines;
+}
+
+/**
+ * Builds a per-component Markdown page for a Collector component. Gives agents
+ * real, parseable content (name, stability, attributes) at a stable URL instead
+ * of the client-rendered SPA shell.
+ */
+export function buildCollectorComponentPage(component, jsonUrl, latestJsonUrl) {
+  const label = component.display_name || component.name || component.id;
+  const pageUrl = `/collector/components/${component.distribution}/${component.name}`;
+  const lines = [
+    `# ${label}`,
+    "",
+    "<!-- llms-txt-link: /llms.txt -->",
+    "",
+    `> OpenTelemetry Collector ${component.type ?? "component"} · ${component.distribution} distribution`,
+    "",
+  ];
+  if (component.description) {
+    lines.push(component.description, "");
+  }
+  lines.push(
+    `- **Component ID**: \`${component.id}\``,
+    `- **Name**: \`${component.name}\``,
+    `- **Type**: ${component.type ?? "unknown"}`,
+    `- **Distribution**: ${component.distribution}`
+  );
+  if (component.repository) {
+    lines.push(`- **Repository**: \`${component.repository}\``);
+  }
+  lines.push("");
+
+  const stability = component.status?.stability;
+  if (stability && Object.keys(stability).length) {
+    lines.push("## Stability", "", "| Level | Signals |", "| --- | --- |");
+    for (const [level, signals] of Object.entries(stability)) {
+      lines.push(`| ${level} | ${escapeCell((signals || []).join(", "))} |`);
+    }
+    lines.push("");
+  }
+
+  lines.push(...collectorMetricsTable("Metrics", component.metrics, component.attributes));
+  lines.push(
+    ...collectorMetricsTable(
+      "Internal telemetry",
+      component.telemetry?.metrics,
+      component.attributes
+    )
+  );
+
+  const attributes = component.attributes;
+  if (attributes && typeof attributes === "object" && Object.keys(attributes).length) {
+    lines.push("## Attributes", "", "| Attribute | Type | Description |", "| --- | --- | --- |");
+    for (const [attrName, info] of Object.entries(attributes)) {
+      lines.push(
+        `| \`${attrName}\` | ${escapeCell(info?.type)} | ${escapeCell(info?.description)} |`
+      );
+    }
+    lines.push("");
+  }
+
+  lines.push("## Data", "");
+  if (latestJsonUrl) {
+    // Stable alias for the current release. Constructible from the component name
+    // alone, so an agent does not have to walk versions-index -> version manifest
+    // to resolve the content hash.
+    lines.push(`- **JSON (latest)**: [${latestJsonUrl}](${latestJsonUrl})`);
+  }
+  lines.push(
+    `- **JSON (pinned)**: [${jsonUrl}](${jsonUrl})`,
+    `- **Explore**: [${pageUrl}](${pageUrl})`,
+    ""
+  );
+  return lines.join("\n");
+}
+
+/**
+ * Builds a per-instrumentation Markdown page for a Java agent instrumentation.
+ */
+export function buildJavaInstrumentationPage(instr, jsonUrl, latestJsonUrl) {
+  const label = instr.display_name || instr.name;
+  const pageUrl = `/java-agent/instrumentation/${instr.name}`;
+  const lines = [
+    `# ${label}`,
+    "",
+    "<!-- llms-txt-link: /llms.txt -->",
+    "",
+    "> OpenTelemetry Java agent instrumentation",
+    "",
+  ];
+  if (instr.description) {
+    lines.push(instr.description, "");
+  }
+  lines.push(`- **Name**: \`${instr.name}\``);
+  if (instr.scope?.name) {
+    lines.push(`- **Scope**: \`${instr.scope.name}\``);
+  }
+  if (Array.isArray(instr.javaagent_target_versions) && instr.javaagent_target_versions.length) {
+    lines.push(
+      `- **Target versions**: ${instr.javaagent_target_versions.map((v) => `\`${v}\``).join(", ")}`
+    );
+  }
+  if (instr.library_link) {
+    lines.push(`- **Library**: ${instr.library_link}`);
+  }
+  lines.push("");
+
+  // Telemetry: one subsection per `when` group. Unioning the groups into flat
+  // lists would advertise mutually exclusive signals as if they were emitted
+  // together -- Apache Dubbo emits `rpc.client.duration` by default but
+  // `rpc.client.call.duration` under `otel.semconv-stability.opt-in=rpc`, and a
+  // flattened page lists both. Groups are emitted in source order; the registry
+  // guarantees each group carries a `when` and that no two share one.
+  const telemetry = Array.isArray(instr.telemetry) ? instr.telemetry : [];
+  const telemetryLines = [];
+  for (const group of telemetry) {
+    const metrics = group?.metrics ?? [];
+    const spans = group?.spans ?? [];
+    if (!metrics.length && !spans.length) continue;
+    telemetryLines.push(`### When \`${escapeCell(group?.when ?? "default")}\``, "");
+
+    if (metrics.length) {
+      telemetryLines.push(
+        "**Metrics**",
+        "",
+        "| Metric | Instrument | Type | Unit | Description |",
+        "| --- | --- | --- | --- | --- |"
+      );
+      for (const metric of metrics) {
+        telemetryLines.push(
+          `| \`${escapeCell(metric?.name)}\` | ${escapeCell(metric?.instrument)} | ${escapeCell(
+            metric?.data_type
+          )} | ${escapeCell(metric?.unit)} | ${escapeCell(metric?.description)} |`
+        );
+      }
+      telemetryLines.push("");
+
+      // Metric attributes get their own table so the main one stays narrow.
+      // Metrics without attributes are skipped rather than given an empty row.
+      const withAttributes = metrics.filter((m) => (m?.attributes ?? []).length);
+      if (withAttributes.length) {
+        telemetryLines.push("| Metric | Attributes |", "| --- | --- |");
+        for (const metric of withAttributes) {
+          telemetryLines.push(
+            `| \`${escapeCell(metric?.name)}\` | ${formatJavaAttributes(metric.attributes)} |`
+          );
+        }
+        telemetryLines.push("");
+      }
+    }
+
+    if (spans.length) {
+      telemetryLines.push("**Spans**", "", "| Span kind | Attributes |", "| --- | --- |");
+      for (const span of spans) {
+        telemetryLines.push(
+          `| ${escapeCell(span?.span_kind ?? "unknown")} | ${formatJavaAttributes(
+            span?.attributes
+          )} |`
+        );
+      }
+      telemetryLines.push("");
+    }
+  }
+  if (telemetryLines.length) {
+    lines.push("## Telemetry", "", ...telemetryLines);
+  }
+
+  const configs = Array.isArray(instr.configurations) ? instr.configurations : [];
+  if (configs.length) {
+    lines.push(
+      "## Configuration",
+      "",
+      "| Option | Type | Default | Description |",
+      "| --- | --- | --- | --- |"
+    );
+    for (const cfg of configs) {
+      lines.push(
+        `| \`${escapeCell(cfg?.name)}\` | ${escapeCell(cfg?.type)} | ${escapeCell(
+          cfg?.default
+        )} | ${escapeCell(cfg?.description)} |`
+      );
+    }
+    lines.push("");
+  }
+
+  lines.push("## Data", "");
+  if (latestJsonUrl) {
+    // Stable alias for the current release. Constructible from the component name
+    // alone, so an agent does not have to walk versions-index -> version manifest
+    // to resolve the content hash.
+    lines.push(`- **JSON (latest)**: [${latestJsonUrl}](${latestJsonUrl})`);
+  }
+  lines.push(
+    `- **JSON (pinned)**: [${jsonUrl}](${jsonUrl})`,
+    `- **Explore**: [${pageUrl}](${pageUrl})`,
+    ""
+  );
+  return lines.join("\n");
+}
+
+/**
+ * Builds a Markdown page for a top-level (non-parameterized) route. Content is
+ * intentionally lightweight — the route's title/description plus links into the
+ * agent indexes — so agents fetching `/collector.md` etc. get real content.
+ */
+function buildStaticRoutePage(title, description) {
+  return `# ${title}
+
+<!-- llms-txt-link: /llms.txt -->
+
+${description}
+
+## Explore
+
+- [All Collector components](/agent/collector/index.md)
+- [All Java agent instrumentations](/agent/javaagent/index.md)
+- [Full documentation index](/llms.txt)
+`;
+}
+
+/**
+ * The content-addressed stores under `/data` (`{id}/{id}-{hash}.json`) have no
+ * URL an agent can construct from a component name: reaching one file costs a
+ * versions index, then a version manifest, then the hashed file, and the URL
+ * changes on every rebuild. These two entries describe the stores so the alias
+ * below can be emitted for both.
+ */
+const DATA_STORES = [
+  {
+    ecosystem: "collector",
+    contentDir: "components",
+    manifestSections: ["components"],
+  },
+  {
+    ecosystem: "javaagent",
+    contentDir: "instrumentations",
+    manifestSections: ["instrumentations", "custom_instrumentations"],
+  },
+];
+
+/** Stable alias URL for a component's latest-release JSON. */
+function latestJsonUrl(ecosystem, contentDir, id) {
+  return `/data/${ecosystem}/${contentDir}/${id}/latest.json`;
+}
+
+/**
+ * Reads a store's latest release version and its `{id: hash}` manifest.
+ * Returns `null` (with a warning) when no version is flagged latest.
+ */
+async function readLatestManifest(publicPath, { ecosystem, manifestSections }) {
+  const { versions } = JSON.parse(
+    await fs.readFile(path.join(publicPath, `data/${ecosystem}/versions-index.json`), "utf-8")
+  );
+  const latestVersion = versions.find((v) => v.is_latest)?.version;
+  if (!latestVersion) {
+    console.warn(`[WARN] No latest ${ecosystem} version; skipping latest.json aliases.`);
+    return null;
+  }
+
+  const manifest = JSON.parse(
+    await fs.readFile(
+      path.join(publicPath, `data/${ecosystem}/versions/${latestVersion}-index.json`),
+      "utf-8"
+    )
+  );
+  const hashes = Object.assign({}, ...manifestSections.map((section) => manifest[section] || {}));
+  return { latestVersion, hashes };
+}
+
+/**
+ * Copies every latest-release component JSON to `latest.json` beside its hashed
+ * sibling, giving each component one stable, guessable URL. A copy rather than a
+ * redirect so the read stays a single request; the hashed files remain for
+ * callers that want an immutable, pinned URL.
+ *
+ * Written into the build output only — `public/data` is the committed
+ * content-addressed store that the Python `explorer-db-builder` owns and
+ * garbage-collects.
+ *
+ * Exported for tests; `outDir` defaults to `dist`.
+ */
+export async function writeLatestJsonAliases(publicPath, outDir = distDir) {
+  for (const store of DATA_STORES) {
+    const latest = await readLatestManifest(publicPath, store);
+    if (!latest) continue;
+
+    const { ecosystem, contentDir } = store;
+    let written = 0;
+    for (const [id, hash] of Object.entries(latest.hashes)) {
+      const source = path.join(
+        publicPath,
+        `data/${ecosystem}/${contentDir}/${id}/${id}-${hash}.json`
+      );
+      const target = path.join(outDir, `data/${ecosystem}/${contentDir}/${id}/latest.json`);
+      try {
+        await fs.mkdir(path.dirname(target), { recursive: true });
+        await fs.copyFile(source, target);
+        written += 1;
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        console.warn(`[WARN] Could not write latest.json alias for ${ecosystem}/${id}: ${message}`);
+      }
+    }
+    console.log(` - Wrote ${written} ${ecosystem} latest.json aliases (${latest.latestVersion})`);
+  }
+}
+
+/** Maps a route pathname to its Markdown file path in dist (\`/\` -> index.md). */
+function staticRouteMdPath(pathname) {
+  const rel = pathname === "/" ? "index.md" : `${pathname.replace(/^\//, "")}.md`;
+  return path.join(distDir, rel);
+}
+
+/**
+ * Generates a Markdown page for every top-level route in STATIC_ROUTE_META,
+ * written at the app-route path (so `/collector.md`, `/about.md`, etc. resolve),
+ * and returns the `{ label, pageUrl }` listing for llms.txt.
+ */
+async function generateStaticRoutePages() {
+  const pages = [];
+  for (const [pathname, meta] of Object.entries(STATIC_ROUTE_META)) {
+    const outPath = staticRouteMdPath(pathname);
+    await fs.mkdir(path.dirname(outPath), { recursive: true });
+    await fs.writeFile(outPath, buildStaticRoutePage(meta.title, meta.description));
+    pages.push({ label: meta.title, pageUrl: pathname });
+  }
+  return pages;
+}
+
+/**
+ * Generates a per-component Markdown page for every latest-version Collector
+ * component, written at the app-route path (so `/collector/components/{d}/{n}.md`
+ * resolves), and returns the `{ label, pageUrl }` listing for llms.txt.
+ */
+async function generateCollectorPages(publicPath) {
+  const { versions } = JSON.parse(
+    await fs.readFile(path.join(publicPath, "data/collector/versions-index.json"), "utf-8")
+  );
+  const latestVersion = versions.find((v) => v.is_latest)?.version;
+  const pages = [];
+  if (!latestVersion) {
+    console.warn("[WARN] No latest Collector version; skipping per-component pages.");
+    return pages;
+  }
+
+  const manifest = JSON.parse(
+    await fs.readFile(
+      path.join(publicPath, `data/collector/versions/${latestVersion}-index.json`),
+      "utf-8"
+    )
+  );
+
+  for (const [id, hash] of Object.entries(manifest.components || {})) {
+    try {
+      const component = JSON.parse(
+        await fs.readFile(
+          path.join(publicPath, `data/collector/components/${id}/${id}-${hash}.json`),
+          "utf-8"
+        )
+      );
+      const jsonUrl = `/data/collector/components/${id}/${id}-${hash}.json`;
+      const outDir = path.join(distDir, "collector/components", component.distribution);
+      await fs.mkdir(outDir, { recursive: true });
+      await fs.writeFile(
+        path.join(outDir, `${component.name}.md`),
+        buildCollectorComponentPage(
+          component,
+          jsonUrl,
+          latestJsonUrl("collector", "components", id)
+        )
+      );
+      pages.push({
+        label: component.display_name || component.name,
+        pageUrl: `/collector/components/${component.distribution}/${component.name}`,
+      });
+    } catch (e) {
+      console.warn(`[WARN] Could not generate Collector page for ${id}: ${e.message}`);
+    }
+  }
+  return pages;
+}
+
+/**
+ * Generates a per-instrumentation Markdown page for every latest-version Java
+ * agent instrumentation, written at `/java-agent/instrumentation/{name}.md`, and
+ * returns the `{ label, pageUrl }` listing for llms.txt.
+ */
+async function generateJavaPages(publicPath) {
+  const { versions } = JSON.parse(
+    await fs.readFile(path.join(publicPath, "data/javaagent/versions-index.json"), "utf-8")
+  );
+  const latestVersion = versions.find((v) => v.is_latest)?.version;
+  const pages = [];
+  if (!latestVersion) {
+    console.warn("[WARN] No latest Java agent version; skipping per-instrumentation pages.");
+    return pages;
+  }
+
+  const manifest = JSON.parse(
+    await fs.readFile(
+      path.join(publicPath, `data/javaagent/versions/${latestVersion}-index.json`),
+      "utf-8"
+    )
+  );
+  const all = { ...manifest.instrumentations, ...manifest.custom_instrumentations };
+
+  const outDir = path.join(distDir, "java-agent/instrumentation");
+  await fs.mkdir(outDir, { recursive: true });
+  for (const [name, hash] of Object.entries(all)) {
+    try {
+      const instr = JSON.parse(
+        await fs.readFile(
+          path.join(publicPath, `data/javaagent/instrumentations/${name}/${name}-${hash}.json`),
+          "utf-8"
+        )
+      );
+      const jsonUrl = `/data/javaagent/instrumentations/${name}/${name}-${hash}.json`;
+      await fs.writeFile(
+        path.join(outDir, `${name}.md`),
+        buildJavaInstrumentationPage(
+          instr,
+          jsonUrl,
+          latestJsonUrl("javaagent", "instrumentations", name)
+        )
+      );
+      pages.push({
+        label: instr.display_name || instr.name,
+        pageUrl: `/java-agent/instrumentation/${name}`,
+      });
+    } catch (e) {
+      console.warn(`[WARN] Could not generate Java agent page for ${name}: ${e.message}`);
+    }
+  }
+  return pages;
 }
 
 /**
@@ -197,7 +749,16 @@ async function generateDocs() {
   const collectorVersionsMd = buildCollectorVersions(collectorVersions.versions);
   const javaagentIndexMd = await buildJavaAgentIndex(javaagentVersions.versions, publicDir);
   const javaagentVersionsMd = buildJavaAgentVersions(javaagentVersions.versions);
-  const llmsTxt = buildLlmsTxt();
+
+  const staticPages = await generateStaticRoutePages();
+  console.log(` - Generated ${staticPages.length} top-level route pages`);
+  const collectorPages = await generateCollectorPages(publicDir);
+  console.log(` - Generated ${collectorPages.length} Collector component pages`);
+  const javaPages = await generateJavaPages(publicDir);
+  console.log(` - Generated ${javaPages.length} Java agent instrumentation pages`);
+  await writeLatestJsonAliases(publicDir);
+
+  const llmsTxt = buildLlmsTxt(staticPages, collectorPages, javaPages);
 
   await fs.writeFile(path.join(collectorAgentDir, "index.md"), collectorIndexMd);
   console.log(" - Generated dist/agent/collector/index.md");
@@ -230,4 +791,11 @@ async function generateDocs() {
   console.log(" - Generated dist/llms-full.txt");
 }
 
-generateDocs().catch(console.error);
+// Only self-execute when run as a script. Tests import the page builders above,
+// and `process.argv[1]` (rather than `import.meta.main`, which is undefined
+// under Node and under Vitest's transform) keeps that check correct in both
+// Bun and Node so the build step can never silently become a no-op.
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === __filename;
+if (isMain) {
+  generateDocs().catch(console.error);
+}

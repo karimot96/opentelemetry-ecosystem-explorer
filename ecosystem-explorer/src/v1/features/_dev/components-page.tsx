@@ -27,13 +27,47 @@
  */
 
 import { GitCompare, LayoutGrid, Split } from "lucide-react";
+import { useState } from "react";
 
 import { GlowBadge } from "@/components/ui/glow-badge";
 import { StabilityBadge } from "@/components/ui/stability-badge";
+import { TYPE_STRIPE_COLORS } from "@/components/ui/type-stripe-colors";
 import { type Stability, StatusPill } from "@/components/ui/status-pill";
 import { ReleaseCard } from "@/v1/components/ecosystem/release-card";
+import {
+  ActiveFilterChips,
+  DensityToggle,
+  EmptyState,
+  FacetDrawerToggle,
+  Pagination,
+  SortDropdown,
+} from "@/v1/components/list/controls";
+import { CardView, CompactList, TableView, type ListRow } from "@/v1/components/list/views";
+import { DEFAULT_FILTERS, activeFilterCount, type ListFilters } from "@/v1/lib/list-filters";
 import { type PipelineStage, PipelineAnatomy } from "@/v1/components/ecosystem/pipeline-anatomy";
 import { QuickEntryRow } from "@/v1/components/ecosystem/quick-entry-row";
+import { FacetPanel } from "@/v1/components/list/facet-panel";
+import { CheckboxFacet, SearchFacet, SelectFacet } from "@/v1/components/list/facets";
+import { DetailHeader } from "@/v1/components/detail/detail-header";
+import {
+  OnPageAnchors,
+  SiblingNavigator,
+  type SiblingItem,
+} from "@/v1/components/detail/sibling-navigator";
+import { PipelinePlacement } from "@/v1/components/detail/pipeline-placement";
+import {
+  AttributesTab,
+  ConfigurationTab,
+  DetailTabs,
+  type DetailTabId,
+  ExamplesTab,
+  ReadmeTab,
+} from "@/v1/components/detail/tabs";
+import {
+  CompatibilityCard,
+  DiffSelector,
+  VersionTimeline,
+} from "@/v1/components/detail/version-timeline";
 import { CoverBlock } from "@/v1/components/home/cover-block";
 import { EcosystemsGrid } from "@/v1/components/home/ecosystems-grid";
 import { GlobalSearch } from "@/v1/components/home/global-search";
@@ -128,6 +162,68 @@ const CATEGORY_STAGES: PipelineStage[] = [
   },
 ];
 
+// Shared rows fixture for the three list-page density views. Types cover all
+// five TYPE_STRIPE_COLORS accents (resolved inside the views), stabilities
+// exercise the StatusPill variants, and the extension row has no description
+// or signals so the empty fallbacks render.
+const LIST_ROWS: ListRow[] = [
+  {
+    id: "otlp-receiver",
+    name: "otlpreceiver",
+    displayName: "OTLP Receiver",
+    type: "receiver",
+    distribution: "core",
+    description: "Receives telemetry via gRPC or HTTP in OTLP format.",
+    stability: "stable",
+    signals: ["traces", "metrics", "logs"],
+    href: "/collector/components?q=otlpreceiver",
+  },
+  {
+    id: "batch-processor",
+    name: "batchprocessor",
+    displayName: "Batch Processor",
+    type: "processor",
+    distribution: "core",
+    description: "Batches telemetry before export to reduce outgoing connections.",
+    stability: "beta",
+    signals: ["traces", "metrics", "logs"],
+    href: "/collector/components?q=batchprocessor",
+  },
+  {
+    id: "kafka-exporter",
+    name: "kafkaexporter",
+    displayName: "Kafka Exporter",
+    type: "exporter",
+    distribution: "contrib",
+    description: "Exports telemetry to Apache Kafka topics.",
+    stability: "alpha",
+    signals: ["traces", "metrics"],
+    href: "/collector/components?q=kafkaexporter",
+  },
+  {
+    id: "count-connector",
+    name: "countconnector",
+    displayName: "Count Connector",
+    type: "connector",
+    distribution: "contrib",
+    description: "Counts spans, data points, and log records into metrics.",
+    stability: "development",
+    signals: ["metrics"],
+    href: "/collector/components?q=countconnector",
+  },
+  {
+    id: "health-check-extension",
+    name: "healthcheckextension",
+    displayName: "Health Check",
+    type: "extension",
+    distribution: "core",
+    description: null,
+    stability: "deprecated",
+    signals: [],
+    href: "/collector/components?q=healthcheckextension",
+  },
+];
+
 const GLOW_VARIANTS = [
   "accent",
   "secondary",
@@ -170,6 +266,37 @@ function Section({
   );
 }
 
+// Interactive list-controls demo: the controls are stateless dispatchers on
+// the real list page (the URL owns the state), so the showcase supplies a
+// local `ListFilters` object for them to act on.
+function ListControlsShowcase() {
+  const [filters, setFilters] = useState<ListFilters>({
+    ...DEFAULT_FILTERS,
+    types: ["receiver", "processor"],
+    signals: ["traces"],
+    q: "kafka",
+    page: 2,
+  });
+  const onChange = (next: Partial<ListFilters>) => setFilters((prev) => ({ ...prev, ...next }));
+
+  return (
+    <div className="space-y-4">
+      {/* Mobile-only by design: hidden at >=992px, where the facet rail is visible. */}
+      <FacetDrawerToggle filters={filters} onClick={() => {}} />
+      <ActiveFilterChips filters={filters} onChange={onChange} />
+      <div className="flex flex-wrap items-center gap-3">
+        <DensityToggle value={filters.density} onChange={(density) => onChange({ density })} />
+        <SortDropdown value={filters.sort} onChange={(sort) => onChange({ sort })} />
+      </div>
+      <Pagination page={filters.page} totalPages={5} onChange={(page) => onChange({ page })} />
+      <EmptyState
+        hasActiveFilters={activeFilterCount(filters) > 0}
+        onClearAll={() => setFilters(DEFAULT_FILTERS)}
+      />
+    </div>
+  );
+}
+
 // Showcase CTAs are identical across the two CoverBlock variants below
 // (dead-click stubs for visual exercise only). Hoisted so future styling
 // or accessibility tweaks touch one place.
@@ -183,6 +310,152 @@ const showcaseCtas = (
     </button>
   </>
 );
+
+// Facet primitives are controlled, so the showcase holds their state locally
+// to keep them interactive under the screenshot/a11y capture.
+function FacetShowcase() {
+  const [types, setTypes] = useState<string[]>(["receiver", "exporter"]);
+  const [query, setQuery] = useState("");
+  const [version, setVersion] = useState<string | null>(null);
+
+  return (
+    <div className="grid max-w-xs gap-6">
+      <CheckboxFacet
+        title="Component type"
+        selected={types}
+        onChange={setTypes}
+        options={[
+          { value: "receiver", label: "Receiver", count: 98, swatch: TYPE_STRIPE_COLORS.receiver },
+          {
+            value: "processor",
+            label: "Processor",
+            count: 28,
+            swatch: TYPE_STRIPE_COLORS.processor,
+          },
+          { value: "exporter", label: "Exporter", count: 64, swatch: TYPE_STRIPE_COLORS.exporter },
+          {
+            value: "connector",
+            label: "Connector",
+            count: 12,
+            swatch: TYPE_STRIPE_COLORS.connector,
+          },
+          {
+            value: "extension",
+            label: "Extension",
+            count: 21,
+            swatch: TYPE_STRIPE_COLORS.extension,
+          },
+        ]}
+      />
+      <SearchFacet
+        title="Search"
+        placeholder="Search components…"
+        value={query}
+        onChange={setQuery}
+      />
+      <SelectFacet
+        title="Version"
+        value={version}
+        onChange={setVersion}
+        emptyLabel="Latest"
+        options={[
+          { value: "v0.150.0", label: "v0.150.0" },
+          { value: "v0.149.0", label: "v0.149.0" },
+          { value: "v0.148.0", label: "v0.148.0" },
+        ]}
+      />
+    </div>
+  );
+}
+
+// FacetPanel is controlled by the list page's URL state in production; the
+// showcase holds a local ListFilters object and merges partial updates the
+// same way the page will.
+function FacetPanelShowcase() {
+  const [filters, setFilters] = useState<ListFilters>({
+    ...DEFAULT_FILTERS,
+    types: ["receiver"],
+    signals: ["traces"],
+  });
+
+  return (
+    <div className="max-w-xs">
+      <FacetPanel
+        filters={filters}
+        onChange={(next) => setFilters((current) => ({ ...current, ...next }))}
+        versions={["v0.150.0", "v0.149.0", "v0.148.0"]}
+        counts={{
+          types: { receiver: 98, processor: 28, exporter: 64, connector: 12, extension: 21 },
+          signals: { traces: 112, metrics: 96, logs: 74, baggage: 8 },
+          distributions: { core: 41, contrib: 182 },
+        }}
+      />
+    </div>
+  );
+}
+
+// Sibling-navigator fixture: a handful of same-type components with the
+// current entry (otlpreceiver) marked active.
+const SIBLING_ITEMS: SiblingItem[] = [
+  {
+    id: "core-otlpreceiver",
+    name: "otlpreceiver",
+    displayName: "OTLP Receiver",
+    href: "/collector/components/core/otlpreceiver",
+  },
+  {
+    id: "contrib-kafkareceiver",
+    name: "kafkareceiver",
+    displayName: "Kafka Receiver",
+    href: "/collector/components/contrib/kafkareceiver",
+  },
+  {
+    id: "contrib-prometheusreceiver",
+    name: "prometheusreceiver",
+    displayName: "Prometheus Receiver",
+    href: "/collector/components/contrib/prometheusreceiver",
+  },
+];
+
+// Right-rail fixture: a handful of releases with the newest marked latest, so
+// the timeline highlights the current entry and the diff selector has >=2
+// versions to offer.
+const RIGHT_RAIL_VERSIONS = [
+  { version: "v0.150.0", summary: "Latest release" },
+  { version: "v0.149.0" },
+  { version: "v0.148.0" },
+  { version: "v0.147.0" },
+];
+
+// DetailTabs owns the selected-tab state on the real page; the showcase holds
+// it locally so every panel is reachable under the screenshot/a11y capture.
+function DetailTabsShowcase() {
+  const [active, setActive] = useState<DetailTabId>("attributes");
+  return (
+    <DetailTabs active={active} onChange={setActive}>
+      {active === "configuration" && (
+        <ConfigurationTab rows={null} hrefSource="https://github.com/open-telemetry" />
+      )}
+      {active === "readme" && <ReadmeTab hrefSource="https://github.com/open-telemetry" />}
+      {active === "attributes" && (
+        <AttributesTab
+          rows={[
+            {
+              name: "otelcol_receiver_accepted_spans",
+              kind: "metric",
+              description: "Number of spans successfully pushed into the pipeline.",
+            },
+            { name: "transport", kind: "attribute", description: "The transport protocol." },
+            { name: "service.name", kind: "resource", description: "The service name." },
+          ]}
+        />
+      )}
+      {active === "examples" && (
+        <ExamplesTab snippets={[]} hrefExamples="https://github.com/open-telemetry" />
+      )}
+    </DetailTabs>
+  );
+}
 
 export function DevComponentsPage() {
   // Wrapper is a <section>, not <main>: V1App.tsx and LegacyApp.tsx already
@@ -376,6 +649,123 @@ export function DevComponentsPage() {
             },
           ]}
         />
+      </Section>
+
+      <Section id="list-compact" title="CompactList (list page — compact density view)" bare>
+        <CompactList rows={LIST_ROWS} />
+      </Section>
+
+      <Section id="list-cards" title="CardView (list page — cards density view)" bare>
+        <CardView rows={LIST_ROWS} />
+      </Section>
+
+      <Section id="list-table" title="TableView (list page — table density view)" bare>
+        <TableView rows={LIST_ROWS} />
+      </Section>
+
+      <Section
+        id="facets"
+        title="Facets (CheckboxFacet with counts + swatches, SearchFacet, SelectFacet)"
+        bare
+      >
+        <FacetShowcase />
+      </Section>
+
+      <Section
+        id="facet-panel"
+        title="FacetPanel (composed facet rail with counts + version select)"
+        bare
+      >
+        <FacetPanelShowcase />
+      </Section>
+
+      <Section
+        id="list-controls"
+        title="List controls (chips, density toggle, sort, pagination, empty state)"
+        bare
+      >
+        <ListControlsShowcase />
+      </Section>
+
+      <Section
+        id="detail-header"
+        title="DetailHeader (detail page — title card with type-stripe)"
+        bare
+      >
+        <DetailHeader
+          type="receiver"
+          distribution="core"
+          displayName="OTLP Receiver"
+          slug="otlpreceiver"
+          description="Receives telemetry via gRPC or HTTP in OTLP format."
+          stability="stable"
+          version="v0.150.0"
+          signals={["traces", "metrics", "logs"]}
+          hrefRepository="https://github.com/open-telemetry/opentelemetry-collector/tree/main/receiver/otlpreceiver"
+          hrefDocs={null}
+        />
+      </Section>
+
+      <Section
+        id="sibling-navigator"
+        title="SiblingNavigator + OnPageAnchors (detail page — left rail)"
+        bare
+      >
+        <div
+          style={{ maxWidth: "260px", display: "flex", flexDirection: "column", gap: "1.25rem" }}
+        >
+          <SiblingNavigator title="Receivers" items={SIBLING_ITEMS} activeId="core-otlpreceiver" />
+          <OnPageAnchors
+            anchors={[
+              { id: "placement", label: "Where this fits" },
+              { id: "configuration", label: "Configuration" },
+              { id: "readme", label: "README" },
+              { id: "attributes", label: "Emitted attributes" },
+              { id: "examples", label: "Examples" },
+            ]}
+            activeId="attributes"
+          />
+        </div>
+      </Section>
+
+      <Section
+        id="pipeline-placement"
+        title="PipelinePlacement (detail page — 'Where this fits' diagram)"
+        bare
+      >
+        <PipelinePlacement activeType="receiver" activeName="OTLP Receiver" />
+      </Section>
+
+      <Section
+        id="detail-tabs"
+        title="DetailTabs (detail page — configuration / README / attributes / examples)"
+        bare
+      >
+        <DetailTabsShowcase />
+      </Section>
+
+      <Section
+        id="version-timeline"
+        title="VersionTimeline + DiffSelector + CompatibilityCard (detail page — right rail)"
+        bare
+      >
+        <div
+          style={{ maxWidth: "280px", display: "flex", flexDirection: "column", gap: "1.25rem" }}
+        >
+          <VersionTimeline
+            versions={RIGHT_RAIL_VERSIONS}
+            currentVersion="v0.150.0"
+            buildHref={(v) => `/collector/components/core/otlpreceiver?version=${v}`}
+          />
+          <DiffSelector
+            versions={RIGHT_RAIL_VERSIONS.map((v) => v.version)}
+            defaultTo="v0.150.0"
+            buildHref={(from, to) =>
+              `/collector/components/core/otlpreceiver/diff?from=${from}&to=${to}`
+            }
+          />
+          <CompatibilityCard distributions={["core", "contrib"]} />
+        </div>
       </Section>
 
       <Section
