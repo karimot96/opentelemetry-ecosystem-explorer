@@ -12,13 +12,13 @@ input or resolved IA question.
 - Reachable through at least one non-search path
 - Overview present
 - Expected Telemetry has both a preview (listing/search) and full detail
-(component page)
+  (component page)
 - Semantic Convention Conformance communicates tiered coverage,
-where a relevant convention exists
+  where a relevant convention exists
 - Configuration options explain their effect on output,
-where applicable
+  where applicable
 - Version History communicates specific changes, where that
-information is available
+  information is available
 - Deep reference material is linked, not duplicated
 
 ## How to use this doc
@@ -74,7 +74,7 @@ look like for each node, regardless of which ecosystem it lives in.
 
    A condensed telemetry summary (e.g. span/metric counts or
    headline attributes)
-   should beavailable on listing cards and search results,
+   should be available on listing cards and search results,
    allowing users to assess relevance before opening the full
    component page. The complete, expanded version lives
    on the component's own page.
