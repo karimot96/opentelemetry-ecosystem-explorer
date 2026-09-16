@@ -1,7 +1,7 @@
 # Ecosystem Explorer: Guiding Principles for Ecosystems & Component Pages
 
 A working reference for building out any ecosystem or component page
-in the Ecosystem Explorer. Where the IA Recommendation explains why
+in the Ecosystem Explorer. Where [the IA Recommendation](ecosystem-explorer-ia-recommendation.md) explains why
 the structure looks the way it does, this doc distills that
 reasoning into concrete rules for what to actually build.
 Each rule traces back to a specific research finding, stakeholder
