@@ -16,7 +16,8 @@ From user interview synthesis: Users need a fast and reliable way to find releva
 
 This captures my thought process as I move from the [competitive analysis](https://docs.google.com/presentation/d/1TmbkWO_OqBcm44pcZj_yCdYB32oTa2Pq-VTGFG8UxTY/edit?usp=sharing) and the user research toward an Information Architecture recommendation for the Ecosystem Explorer. I’m using the competitive patterns, research findings, and the updated Explorer as inputs to identify IA requirements, questions, and opportunities before developing the proposed IA.
 
-| **User Research** | **Competitive Analysis** | [**Updated Explorer**](https://deploy-preview-870--otel-ecosystem-explorer.netlify.app/) | **IA Question** |
+| **User Research** | **Competitive Analysis** | [**Updated Explorer**](https://
+deploy-preview-870--otel-ecosystem-explorer.netlify.app/) | **IA Question** |
 |---|---|---|---|
 | Finding information is difficult | Search is a primary discovery pattern | Explorer has search/filtering | Is search sufficient as a primary discovery mechanism? |
 | Version-specific information affects implementation | Version history/comparison is common | Explorer has version exploration | How prominent should version be in the IA? |
@@ -31,7 +32,7 @@ The updated Ecosystem Explorer provides multiple entry points for discovery, inc
 ### Ecosystem Structure Analysis
 
 To understand how the existing ecosystems are structured within the Explorer, I mapped the current information hierarchy for the OpenTelemetry Collector and Java Agent.
-![Current Ecosystem Structure Analysis](./images/Current%20Ecosystem%20Structure%20Analysis%20(1).png)
+![Current Ecosystem Structure Analysis](./images/current-ecosystem-structure-analysis.png)
 
 Based on the user research and ecosystem structure analysis, the following IA considerations emerged:
 
@@ -47,7 +48,7 @@ Given these considerations, what IA direction am I proposing?
 
 ### Resolving the IA Questions
 
-**Is search sufficient as a primary discovery mechanism?** Not necessarily. Search should remain important, but shouldn't be the only discovery path. Two participants described finding components through community channels rather than search, since they couldn't search for something they didn't know existed. The updated Explorer already offers multiple paths, including search, ecosystems, signals, components, and recent activity.
+**Is search sufficient as a primary discovery mechanism?** Not necessarily. Search should remain important, but shouldn't be the only discovery path. Two participants described finding components through community channels rather than search, since they couldn't search for something they didn't know existed. The updated Explorer already offers multiple paths, including search, ecosystems, signals, components, and Recent Activity.
 
 **How prominent should versioning be in the IA?** High. Competitors treat version as core metadata, and it mattered to 5 of 7 research participants. It should stay a top-level element across all ecosystems, not just Collector and Java Agent.
 
@@ -78,6 +79,6 @@ This is the core principle: the same structure, expressed in different language 
 
 A fifth entry point, GenAI, sits alongside the shell for a specific reason: GenAI libraries like LangChain, OpenAI Assistants, and Pydantic AI often span multiple ecosystems rather than living under one. GenAI provides a Conformance Comparison view, grouped by convention, that lets users compare these libraries side by side, then routes them into their existing page under whichever ecosystem they actually belong to (currently Python), rather than duplicating content. This keeps the five-node structure fully intact while addressing a real, cross-cutting discovery need.
 
-![IA Recommendation](./images/Recommended%20IA%20(Updated).png)
+![Recommended IA](./images/recommended-ia-updated.png)
 
 See [Proposed Information Architecture](https://www.figma.com/design/0Bnemn8qO6XayQwmyYbB87/Ecosystem-IA?node-id=255-664&t=vlBqAWQcMNiLXWMy-1) on Figma.
