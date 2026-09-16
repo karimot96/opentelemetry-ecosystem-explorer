@@ -26,7 +26,7 @@ This captures my thought process as I move from the [competitive analysis](https
 
 ### Initial Observation
 
-The updated Ecosystem Explorer provides multiple entry points for discovery, including search, ecosystems, signals, components, and recent activity.
+The updated Ecosystem Explorer provides multiple entry points for discovery, including search, ecosystems, signals, components, and Recent Activities.
 
 ### Ecosystem Structure Analysis
 
@@ -47,7 +47,7 @@ Given these considerations, what IA direction am I proposing?
 
 ### Resolving the IA Questions
 
-**Is search sufficient as a primary discovery mechanism?** Not necessarily. Search should remain important, but shouldn't be the only discovery path. Two participants described finding components through community channels rather than search, since they couldn't search for something they didn't know existed. The updated Explorer already offers multiple paths, including search, ecosystems, signals, components, and recent activity.
+**Is search sufficient as a primary discovery mechanism?** Not necessarily. Search should remain important, but shouldn't be the only discovery path. Two participants described finding components through community channels rather than search, since they couldn't search for something they didn't know existed. The updated Explorer already offers multiple paths, including search, ecosystems, signals, components, and Recent Activities.
 
 **How prominent should versioning be in the IA?** High. Competitors treat version as core metadata, and it mattered to 5 of 7 research participants. It should stay a top-level element across all ecosystems, not just Collector and Java Agent.
 
