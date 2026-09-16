@@ -4,20 +4,20 @@ The Ecosystem Explorer needs an information architecture that can scale beyond t
 Agent and Collector experiences to support multiple OpenTelemetry ecosystems, including Python and
 JavaScript.
 
-### Research inputs
+## Research inputs
 
 - [Competitive analysis](https://github.com/open-telemetry/opentelemetry-ecosystem-explorer/blob/main/projects/ux-research-and-info-arc/comp-analysis.md)
 - [Interview synthesis](https://github.com/open-telemetry/opentelemetry-ecosystem-explorer/blob/main/projects/ux-research-and-info-arc/user-interview-synthesis.md)
 - [Multi-language Ecosystem explorer](https://deploy-preview-870--otel-ecosystem-explorer.netlify.app/)
 
-### Key user needs
+## Key user needs
 
 From user interview synthesis: Users need a fast and reliable way to find relevant information,
 understand what has changed or is newly available, determine how it applies to their situation, and
 verify that their implementation is working, without having to piece the information together across
 multiple sources.
 
-### Mapping Research Findings to IA Considerations
+## Mapping Research Findings to IA Considerations
 
 This captures my thought process as I move from the
 [competitive analysis](https://docs.google.com/presentation/d/1TmbkWO_OqBcm44pcZj_yCdYB32oTa2Pq-VTGFG8UxTY/edit?usp=sharing)
@@ -33,12 +33,12 @@ identify IA requirements, questions, and opportunities before developing the pro
 | Configuration effects are unclear                   | Detail pages commonly organize technical info     | Explorer has configuration                                                               | How should configuration information be organized so users can understand its effect? |
 | Users use multiple information sources              | Documentation integrated with package information | Explorer links to documentation/source                                                   | How much should Explorer consolidate vs. link out?                                    |
 
-### Initial Observation
+## Initial Observation
 
 The updated Ecosystem Explorer provides multiple entry points for discovery, including search,
 ecosystems, signals, components, and Recent Activities.
 
-### Ecosystem Structure Analysis
+## Ecosystem Structure Analysis
 
 To understand how the existing ecosystems are structured within the Explorer, I mapped the current
 information hierarchy for the OpenTelemetry Collector and Java Agent.
@@ -65,7 +65,7 @@ instrumentation.
 
 Given these considerations, what IA direction am I proposing?
 
-### Resolving the IA Questions
+## Resolving the IA Questions
 
 **Is search sufficient as a primary discovery mechanism?** Not necessarily. Search should remain
 important, but shouldn't be the only discovery path. Two participants described finding components
@@ -93,7 +93,7 @@ expected telemetry, configuration effects); link out for deep documentation and 
 both competitor patterns and the research: users want a faster starting point, not a replacement for
 their other sources.
 
-### Additional Consideration
+## Additional Consideration
 
 I added Semantic Convention Conformance as suggested by one of my mentors, Jay. It tells the user
 how much of the official convention a specific library actually implements, helping them get a
@@ -107,7 +107,7 @@ This also surfaced a related question: how should conformance work for GenAI lib
 since they often span multiple ecosystems rather than living neatly under a single one? That
 question is resolved below, as part of the IA Recommendation.
 
-### IA Recommendation
+## IA Recommendation
 
 The proposed IA has two layers: a shared shell at the top, and ecosystem-specific structure
 underneath.
