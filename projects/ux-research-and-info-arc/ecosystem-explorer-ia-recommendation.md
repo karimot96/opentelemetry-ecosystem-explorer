@@ -6,9 +6,9 @@ JavaScript.
 
 ## Research inputs
 
-- [Competitive analysis](https://github.com/open-telemetry/opentelemetry-ecosystem-explorer/blob/main/projects/ux-research-and-info-arc/comp-analysis.md)
+- [Competitive analysis](./ecosystem-explorer-competitive-analysis.pdf)
 - [Interview synthesis](https://github.com/open-telemetry/opentelemetry-ecosystem-explorer/blob/main/projects/ux-research-and-info-arc/user-interview-synthesis.md)
-- [Multi-language Ecosystem explorer](https://deploy-preview-870--otel-ecosystem-explorer.netlify.app/)
+- Multi-language Ecosystem Explorer V1
 
 ## Key user needs
 
@@ -20,12 +20,12 @@ multiple sources.
 ## Mapping Research Findings to IA Considerations
 
 This captures my thought process as I move from the
-[competitive analysis](https://docs.google.com/presentation/d/1TmbkWO_OqBcm44pcZj_yCdYB32oTa2Pq-VTGFG8UxTY/edit?usp=sharing)
+[competitive analysis](./ecosystem-explorer-competitive-analysis.pdf)
 and the user research toward an Information Architecture recommendation for the Ecosystem Explorer.
 I’m using the competitive patterns, research findings, and the updated Explorer as inputs to
 identify IA requirements, questions, and opportunities before developing the proposed IA.
 
-| **User Research**                                   | **Competitive Analysis**                          | [**Updated Explorer**](https://deploy-preview-870--otel-ecosystem-explorer.netlify.app/) | **IA Question**                                                                       |
+| **User Research**                                   | **Competitive Analysis**                          | **Updated Explorer V1** | **IA Question**                                                                       |
 | --------------------------------------------------- | ------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
 | Finding information is difficult                    | Search is a primary discovery pattern             | Explorer has search/filtering                                                            | Is search sufficient as a primary discovery mechanism?                                |
 | Version-specific information affects implementation | Version history/comparison is common              | Explorer has version exploration                                                         | How prominent should version be in the IA?                                            |
@@ -42,7 +42,7 @@ ecosystems, signals, components, and Recent Activities.
 
 To understand how the existing ecosystems are structured within the Explorer, I mapped the current
 information hierarchy for the OpenTelemetry Collector and Java Agent.
-![Current Ecosystem Structure Analysis](<./images/Current%20Ecosystem%20Structure%20Analysis%20(1).png>)
+![Current Ecosystem Structure Analysis](<./images/current-ecosystem-structure-analysis.png>)
 
 Based on the user research and ecosystem structure analysis, the following IA considerations
 emerged:
@@ -114,7 +114,7 @@ underneath.
 
 The shell consists of four entry points: Search, Ecosystems, Signals, and Recent Activities, largely
 unchanged from the
-[Current Explorer](https://deploy-preview-870--otel-ecosystem-explorer.netlify.app/).
+Ecosystem Explorer V1.
 
 Within Ecosystems, each language or tool (currently Collector, Java Agent, and Python) organizes its
 own top-level taxonomy differently, reflecting genuine technical differences: Collector groups by
@@ -139,7 +139,7 @@ compare these libraries side by side, then routes them into their existing page 
 ecosystem they actually belong to (currently Python), rather than duplicating content. This keeps
 the five-node structure fully intact while addressing a real, cross-cutting discovery need.
 
-![IA Recommendation](<./images/Recommended%20IA%20(Updated).png>)
+![IA Recommendation](<./images/recommended-ia-updated.png>)
 
 See
 [Proposed Information Architecture](https://www.figma.com/design/0Bnemn8qO6XayQwmyYbB87/Ecosystem-IA?node-id=255-664&t=vlBqAWQcMNiLXWMy-1)
